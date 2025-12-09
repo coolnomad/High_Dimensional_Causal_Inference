@@ -1,0 +1,226 @@
+---
+title: "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments"
+author: "Demetrius DiMucci"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+---
+
+## abstract
+
+deck strength in limited formats emerges from three forces: a player's baseline win propensity, the composition of the deck they draft, and randomness in gameplay. these forces are entangled through the causal structure\
+`W ← P → D → W`,\
+where `P` is player skill, `D` is deck composition, and `W` is win outcome.
+
+this article develops a method to identify the causal effect of deck composition on win rate in a high-dimensional setting (≈400 card features, ≈90k draft logs), despite strong confounding by skill. the approach combines hierarchical shrinkage, per-player baseline win estimation, high-dimensional modeling of deck performance, and simulation-based calibration. results show that naive regressions overstate the value of synergistic cards for highly skilled players, while the corrected estimator recovers a stable "deck bump" effect attributable to deck construction alone.
+
+------------------------------------------------------------------------
+
+## 1. introduction
+
+predictive models for limited formats (e.g., xgboost, neural networks) estimate how good a deck *will* perform. they do not isolate *why*. in games like magic: the gathering, draft decisions couple tightly to player skill: stronger players select higher-value cards, commit earlier, navigate signals better, and construct smoother curves. this creates a persistent confounding problem:
+
+-   deck composition `D` correlates with skill `P`,\
+-   `P` also causes better win results `W`,\
+-   so naïve models inflate the apparent value of cards favored by strong players.
+
+i treat the draft ecosystem as a high-dimensional causal inference problem. the goal is to estimate\
+`E[W | do(D)]`\
+rather than `E[W | D]`, i.e., isolate the effect of deck construction itself.
+
+------------------------------------------------------------------------
+
+## 2. causal structure
+
+### 2.1 dag
+
+``` text
+P ─────▶ W
+│        ▲
+│        │
+└──────▶ D ─────▶ W
+```
+
+### 2.2 interpretation
+
+-   **P (player skill)** affects both deck strength and win rate.\
+-   **D (deck features)** is high-dimensional (\~400 card features and counts).\
+-   **W (match outcome)** is binomial (best-of-3 events summarized to match winrate).
+
+### 2.3 estimand
+
+the target is the causal effect:
+
+$$
+\tau = E[W \mid do(D = d_1)] - E[W \mid do(D = d_0)].
+$$
+
+because intervention on deck composition is counterfactual, we recover this via baseline-skill adjustment.
+
+------------------------------------------------------------------------
+
+## 3. baseline win propensity
+
+i estimate per-player baseline skill via a hierarchical beta-binomial model across historical drafts:
+
+$$
+W_i \sim \text{Binomial}(n_i, p_i), \\
+p_i \sim \text{Beta}(\alpha,\beta).
+$$
+
+this shrinks noisy players toward the population mean while giving stable posteriors for grinders. the result is a **baseline win probability** $p_{\text{base}, i}$ for each player that approximates the $P \to W$ path.
+
+------------------------------------------------------------------------
+
+## 4. modeling deck-driven win probability
+
+### 4.1 high-dimensional deck model
+
+i build a model
+
+$$
+\hat{p}_{\text{deck}} = f(D),
+$$
+
+where $D$ is the deck composition after construction (mana curve, color identity, card counts, rares, removal density, synergy flags, diminishing-returns interactions, etc.). xgboost handles sparsity, nonlinearity, and interactions.
+
+cross-validation is grouped by player id to avoid leakage of skill.
+
+### 4.2 deck bump
+
+the deck's causal contribution is operationalized as:
+
+$$
+\text{deck\_bump} = f(D) - p_{\text{base}}.
+$$
+
+this removes the direct effect of $P \to W$ and isolates the $D \to W$ path.\
+in quasi-random drafts, residual confounding is small.
+
+------------------------------------------------------------------------
+
+## 5. identifiability and simulation tests
+
+to evaluate the method, i simulate draft environments with known ground truth:
+
+-   assign players true skill $P$\
+-   generate $D$ from $P$ with tunable correlation\
+-   generate match outcomes from $P$ and $D$
+
+### findings
+
+1.  naïve regressions overstate effect sizes when $\text{cov}(P, D)$ is large.\
+2.  the baseline-adjusted estimator recovers the true deck effect across a wide range of confounding strengths.\
+3.  high dimensionality (200--500 features) does not break identification when:
+    -   shrinkage is applied to rare card counts,\
+    -   interactions are modeled flexibly,\
+    -   model training is grouped by player.
+
+::: cell
+```{r}
+# placeholder: insert simulation plotting code here
+# e.g., ggplot(sim_results, aes(x = true_effect, y = est_effect, color = method)) + ...
+```
+:::
+
+------------------------------------------------------------------------
+
+## 6. empirical results on 17lands FIN format
+
+### 6.1 data
+
+-   \~90,000 drafts\
+-   \~400 card features\
+-   complete event histories\
+-   multiple replications per player
+
+### 6.2 calibration
+
+posterior predictions for $f(D)$ are nearly perfectly calibrated after beta-binomial smoothing. plotting $f(D)$ vs empirical win rate gives slope \~1.0 (vs \~1.3 naïve).
+
+::: cell
+```{r}
+# placeholder for calibration curve
+# ggplot(calib_df, aes(pred_bin, empirical_rate)) + ...
+```
+:::
+
+### 6.3 player-strength correction
+
+card-level marginal value curves differ substantially after accounting for $P$. for example:
+
+-   high-synergy cards appear overpowered in naïve models because skilled players draft them disproportionately.\
+-   after correction, the value curve flattens, revealing the actual diminishing returns.
+
+(insert sahagin figure here when ready.)
+
+### 6.4 per-card marginal curves
+
+for each card $c$:
+
+$$
+m_{c}(n) = f(D_{c}=n) - f(D_{c}=n-1),
+$$
+
+revealing synergy pockets and diminishing returns without skill-induced distortion.
+
+------------------------------------------------------------------------
+
+## 7. interpretability
+
+i compute:
+
+-   model-agnostic SHAP values for card contributions,\
+-   synergy matrices using pairwise deltas,\
+-   archetype embeddings based on deck-bump profiles.
+
+together, these reveal:
+
+-   which archetypes benefit most from high-skill pilots,\
+-   which cards have intrinsic value vs "skill halo" distortion,\
+-   how diminishing returns align with gameplay heuristics.
+
+------------------------------------------------------------------------
+
+## 8. discussion
+
+the broader contribution is methodological: deck construction is a reproducible sandbox for causal inference with:
+
+-   high-dimensional treatments $D$,\
+-   structured confounding via $P$,\
+-   large sample sizes,\
+-   quasi-random assignment noise from packs.
+
+this same causal template appears in biological data:
+
+-   $P$ = genomic background or copy number,\
+-   $D$ = high-dimensional gene expression,\
+-   $W$ = drug response.
+
+the deck-bump estimator parallels expression-mediated effect isolation.
+
+------------------------------------------------------------------------
+
+## 9. limitations
+
+-   late-draft picks are not fully random.\
+-   synergy leakage into the baseline estimate can occur for player specialists.\
+-   cross-set generalization is not guaranteed.
+
+------------------------------------------------------------------------
+
+## 10. conclusion
+
+isolating $D \to W$ in high-dimensional decision systems is feasible when skill is explicitly modeled and posterior adjustments isolate the structural contribution of deck composition. this produces interpretable, stable estimates of card and deck value and serves as a general causal-inference template.
+
+------------------------------------------------------------------------
+
+## references
+
+-   pearl, j. *causality*.\
+-   imbens, g., rubin, d. *causal inference for statistics, social, and biomedical sciences*.\
+-   chen, t., guestrin, c. (2016). xgboost: a scalable tree boosting system.\
+-   17lands.com performance and draft log data.

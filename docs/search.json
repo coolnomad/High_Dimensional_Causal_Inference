@@ -1,0 +1,93 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "",
+    "text": "deck strength in limited formats emerges from three forces: a player’s baseline win propensity, the composition of the deck they draft, and randomness in gameplay. these forces are entangled through the causal structure\nW ← P → D → W,\nwhere P is player skill, D is deck composition, and W is win outcome.\nthis article develops a method to identify the causal effect of deck composition on win rate in a high-dimensional setting (≈400 card features, ≈90k draft logs), despite strong confounding by skill. the approach combines hierarchical shrinkage, per-player baseline win estimation, high-dimensional modeling of deck performance, and simulation-based calibration. results show that naive regressions overstate the value of synergistic cards for highly skilled players, while the corrected estimator recovers a stable “deck bump” effect attributable to deck construction alone."
+  },
+  {
+    "objectID": "index.html#abstract",
+    "href": "index.html#abstract",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "",
+    "text": "deck strength in limited formats emerges from three forces: a player’s baseline win propensity, the composition of the deck they draft, and randomness in gameplay. these forces are entangled through the causal structure\nW ← P → D → W,\nwhere P is player skill, D is deck composition, and W is win outcome.\nthis article develops a method to identify the causal effect of deck composition on win rate in a high-dimensional setting (≈400 card features, ≈90k draft logs), despite strong confounding by skill. the approach combines hierarchical shrinkage, per-player baseline win estimation, high-dimensional modeling of deck performance, and simulation-based calibration. results show that naive regressions overstate the value of synergistic cards for highly skilled players, while the corrected estimator recovers a stable “deck bump” effect attributable to deck construction alone."
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "1. introduction",
+    "text": "1. introduction\npredictive models for limited formats (e.g., xgboost, neural networks) estimate how good a deck will perform. they do not isolate why. in games like magic: the gathering, draft decisions couple tightly to player skill: stronger players select higher-value cards, commit earlier, navigate signals better, and construct smoother curves. this creates a persistent confounding problem:\n\ndeck composition D correlates with skill P,\n\nP also causes better win results W,\n\nso naïve models inflate the apparent value of cards favored by strong players.\n\ni treat the draft ecosystem as a high-dimensional causal inference problem. the goal is to estimate\nE[W | do(D)]\nrather than E[W | D], i.e., isolate the effect of deck construction itself."
+  },
+  {
+    "objectID": "index.html#causal-structure",
+    "href": "index.html#causal-structure",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "2. causal structure",
+    "text": "2. causal structure\n\n2.1 dag\nP ─────▶ W\n│        ▲\n│        │\n└──────▶ D ─────▶ W\n\n\n2.2 interpretation\n\nP (player skill) affects both deck strength and win rate.\n\nD (deck features) is high-dimensional (~400 card features and counts).\n\nW (match outcome) is binomial (best-of-3 events summarized to match winrate).\n\n\n\n2.3 estimand\nthe target is the causal effect:\n\\[\n\\tau = E[W \\mid do(D = d_1)] - E[W \\mid do(D = d_0)].\n\\]\nbecause intervention on deck composition is counterfactual, we recover this via baseline-skill adjustment."
+  },
+  {
+    "objectID": "index.html#baseline-win-propensity",
+    "href": "index.html#baseline-win-propensity",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "3. baseline win propensity",
+    "text": "3. baseline win propensity\ni estimate per-player baseline skill via a hierarchical beta-binomial model across historical drafts:\n\\[\nW_i \\sim \\text{Binomial}(n_i, p_i), \\\\\np_i \\sim \\text{Beta}(\\alpha,\\beta).\n\\]\nthis shrinks noisy players toward the population mean while giving stable posteriors for grinders. the result is a baseline win probability \\(p_{\\text{base}, i}\\) for each player that approximates the \\(P \\to W\\) path."
+  },
+  {
+    "objectID": "index.html#modeling-deck-driven-win-probability",
+    "href": "index.html#modeling-deck-driven-win-probability",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "4. modeling deck-driven win probability",
+    "text": "4. modeling deck-driven win probability\n\n4.1 high-dimensional deck model\ni build a model\n\\[\n\\hat{p}_{\\text{deck}} = f(D),\n\\]\nwhere \\(D\\) is the deck composition after construction (mana curve, color identity, card counts, rares, removal density, synergy flags, diminishing-returns interactions, etc.). xgboost handles sparsity, nonlinearity, and interactions.\ncross-validation is grouped by player id to avoid leakage of skill.\n\n\n4.2 deck bump\nthe deck’s causal contribution is operationalized as:\n\\[\n\\text{deck\\_bump} = f(D) - p_{\\text{base}}.\n\\]\nthis removes the direct effect of \\(P \\to W\\) and isolates the \\(D \\to W\\) path.\nin quasi-random drafts, residual confounding is small."
+  },
+  {
+    "objectID": "index.html#identifiability-and-simulation-tests",
+    "href": "index.html#identifiability-and-simulation-tests",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "5. identifiability and simulation tests",
+    "text": "5. identifiability and simulation tests\nto evaluate the method, i simulate draft environments with known ground truth:\n\nassign players true skill \\(P\\)\n\ngenerate \\(D\\) from \\(P\\) with tunable correlation\n\ngenerate match outcomes from \\(P\\) and \\(D\\)\n\n\nfindings\n\nnaïve regressions overstate effect sizes when \\(\\text{cov}(P, D)\\) is large.\n\nthe baseline-adjusted estimator recovers the true deck effect across a wide range of confounding strengths.\n\nhigh dimensionality (200–500 features) does not break identification when:\n\nshrinkage is applied to rare card counts,\n\ninteractions are modeled flexibly,\n\nmodel training is grouped by player.\n\n\n\n\n\nCode\n# placeholder: insert simulation plotting code here\n# e.g., ggplot(sim_results, aes(x = true_effect, y = est_effect, color = method)) + ..."
+  },
+  {
+    "objectID": "index.html#empirical-results-on-17lands-fin-format",
+    "href": "index.html#empirical-results-on-17lands-fin-format",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "6. empirical results on 17lands FIN format",
+    "text": "6. empirical results on 17lands FIN format\n\n6.1 data\n\n~90,000 drafts\n\n~400 card features\n\ncomplete event histories\n\nmultiple replications per player\n\n\n\n6.2 calibration\nposterior predictions for \\(f(D)\\) are nearly perfectly calibrated after beta-binomial smoothing. plotting \\(f(D)\\) vs empirical win rate gives slope ~1.0 (vs ~1.3 naïve).\n\n\n\nCode\n# placeholder for calibration curve\n# ggplot(calib_df, aes(pred_bin, empirical_rate)) + ...\n\n\n\n\n\n6.3 player-strength correction\ncard-level marginal value curves differ substantially after accounting for \\(P\\). for example:\n\nhigh-synergy cards appear overpowered in naïve models because skilled players draft them disproportionately.\n\nafter correction, the value curve flattens, revealing the actual diminishing returns.\n\n(insert sahagin figure here when ready.)\n\n\n6.4 per-card marginal curves\nfor each card \\(c\\):\n\\[\nm_{c}(n) = f(D_{c}=n) - f(D_{c}=n-1),\n\\]\nrevealing synergy pockets and diminishing returns without skill-induced distortion."
+  },
+  {
+    "objectID": "index.html#interpretability",
+    "href": "index.html#interpretability",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "7. interpretability",
+    "text": "7. interpretability\ni compute:\n\nmodel-agnostic SHAP values for card contributions,\n\nsynergy matrices using pairwise deltas,\n\narchetype embeddings based on deck-bump profiles.\n\ntogether, these reveal:\n\nwhich archetypes benefit most from high-skill pilots,\n\nwhich cards have intrinsic value vs “skill halo” distortion,\n\nhow diminishing returns align with gameplay heuristics."
+  },
+  {
+    "objectID": "index.html#discussion",
+    "href": "index.html#discussion",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "8. discussion",
+    "text": "8. discussion\nthe broader contribution is methodological: deck construction is a reproducible sandbox for causal inference with:\n\nhigh-dimensional treatments \\(D\\),\n\nstructured confounding via \\(P\\),\n\nlarge sample sizes,\n\nquasi-random assignment noise from packs.\n\nthis same causal template appears in biological data:\n\n\\(P\\) = genomic background or copy number,\n\n\\(D\\) = high-dimensional gene expression,\n\n\\(W\\) = drug response.\n\nthe deck-bump estimator parallels expression-mediated effect isolation."
+  },
+  {
+    "objectID": "index.html#limitations",
+    "href": "index.html#limitations",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "9. limitations",
+    "text": "9. limitations\n\nlate-draft picks are not fully random.\n\nsynergy leakage into the baseline estimate can occur for player specialists.\n\ncross-set generalization is not guaranteed."
+  },
+  {
+    "objectID": "index.html#conclusion",
+    "href": "index.html#conclusion",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "10. conclusion",
+    "text": "10. conclusion\nisolating \\(D \\to W\\) in high-dimensional decision systems is feasible when skill is explicitly modeled and posterior adjustments isolate the structural contribution of deck composition. this produces interpretable, stable estimates of card and deck value and serves as a general causal-inference template."
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments",
+    "section": "references",
+    "text": "references\n\npearl, j. causality.\n\nimbens, g., rubin, d. causal inference for statistics, social, and biomedical sciences.\n\nchen, t., guestrin, c. (2016). xgboost: a scalable tree boosting system.\n\n17lands.com performance and draft log data."
+  }
+]

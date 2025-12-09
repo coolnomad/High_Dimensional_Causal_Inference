@@ -1,0 +1,21 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "High-Dimensional Causal Inference in Draft Environments"
+  navbar:
+    left:
+      - href: index.qmd
+        text: "Home"
+    right:
+      - text: "GitHub"
+        href: "https://github.com/USERNAME/High_Dimensional_Causal_Inference"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    number-sections: false
