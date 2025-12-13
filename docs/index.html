@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Demetrius DiMucci">
-<meta name="dcterms.date" content="2025-12-09">
+<meta name="dcterms.date" content="2025-12-13">
 
 <title>High-Dimensional Causal Inference in Draft Environments - Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments</title>
 <style>
@@ -149,7 +149,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#dag" id="toc-dag" class="nav-link" data-scroll-target="#dag">2.1 dag</a></li>
   <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation">2.2 interpretation</a></li>
-  <li><a href="#estimand" id="toc-estimand" class="nav-link" data-scroll-target="#estimand">2.3 estimand</a></li>
+  <li><a href="#estimand" id="toc-estimand" class="nav-link" data-scroll-target="#estimand">2.3 Estimand</a></li>
   </ul></li>
   <li><a href="#baseline-win-propensity" id="toc-baseline-win-propensity" class="nav-link" data-scroll-target="#baseline-win-propensity">3. baseline win propensity</a></li>
   <li><a href="#modeling-deck-driven-win-probability" id="toc-modeling-deck-driven-win-probability" class="nav-link" data-scroll-target="#modeling-deck-driven-win-probability">4. modeling deck-driven win probability</a>
@@ -169,7 +169,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#per-card-marginal-curves" id="toc-per-card-marginal-curves" class="nav-link" data-scroll-target="#per-card-marginal-curves">6.4 per-card marginal curves</a></li>
   </ul></li>
   <li><a href="#interpretability" id="toc-interpretability" class="nav-link" data-scroll-target="#interpretability">7. interpretability</a></li>
-  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">8. discussion</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">8. discussion</a>
+  <ul class="collapse">
+  <li><a href="#recovery-of-the-deck-effect-under-realistic-observation-noise" id="toc-recovery-of-the-deck-effect-under-realistic-observation-noise" class="nav-link" data-scroll-target="#recovery-of-the-deck-effect-under-realistic-observation-noise">Recovery of the Deck Effect under Realistic Observation Noise</a></li>
+  <li><a href="#xgboost-as-a-function-approximator-for-the-g-formula" id="toc-xgboost-as-a-function-approximator-for-the-g-formula" class="nav-link" data-scroll-target="#xgboost-as-a-function-approximator-for-the-g-formula">XGBoost as a Function Approximator for the G-Formula</a></li>
+  <li><a href="#performance-relative-to-the-noise-ceiling" id="toc-performance-relative-to-the-noise-ceiling" class="nav-link" data-scroll-target="#performance-relative-to-the-noise-ceiling">Performance relative to the noise ceiling</a></li>
+  <li><a href="#implications-for-real-world-arena-data" id="toc-implications-for-real-world-arena-data" class="nav-link" data-scroll-target="#implications-for-real-world-arena-data">Implications for Real World Arena Data</a></li>
+  <li><a href="#scope-and-intended-use-of-the-estimator" id="toc-scope-and-intended-use-of-the-estimator" class="nav-link" data-scroll-target="#scope-and-intended-use-of-the-estimator">Scope and Intended Use of the Estimator</a></li>
+  </ul></li>
   <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">9. limitations</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">10. conclusion</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">references</a></li>
@@ -198,7 +205,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 9, 2025</p>
+      <p class="date">December 13, 2025</p>
     </div>
   </div>
   
@@ -251,12 +258,14 @@ rather than <code>E[W | D]</code>, i.e., isolate the effect of deck construction
 </ul>
 </section>
 <section id="estimand" class="level3">
-<h3 class="anchored" data-anchor-id="estimand">2.3 estimand</h3>
-<p>the target is the causal effect:</p>
+<h3 class="anchored" data-anchor-id="estimand">2.3 Estimand</h3>
+<p>the target is the average causal effect (ACE) of deck composition <span class="math inline">\(d_1\)</span> relative to a baseline deck <span class="math inline">\(d_0(P)\)</span> for a player of skill <span class="math inline">\(P\)</span>:</p>
 <p><span class="math display">\[
-\tau = E[W \mid do(D = d_1)] - E[W \mid do(D = d_0)].
+\tau(d_1) = E_p [E[W \mid do(D = d_1), P] - E[W \mid do(D = d_0(P)), P]].
 \]</span></p>
-<p>because intervention on deck composition is counterfactual, we recover this via baseline-skill adjustment.</p>
+<p>Because direct intervention on deck composition is counterfactual, this estimand is identified via adjustment for player skill. More concretely, it represents the difference in expected win rate caused by forcing a player of skill <span class="math inline">\(P\)</span> to use <span class="math inline">\(d_1\)</span> instead of the typical deck <span class="math inline">\(d_0(P)\)</span> drafted by players of that same skill.</p>
+<p>Under the assumed directed acyclic graph (DAG) this estimand is identified because conditioning on <span class="math inline">\(P\)</span> blocks all backdoor paths from <span class="math inline">\(D\)</span> to <span class="math inline">\(W\)</span>, <span class="math inline">\(D\)</span> has no children other than <span class="math inline">\(W\)</span> , and there are no unobserved confounders of the <span class="math inline">\(D \rightarrow W\)</span> relationship after adjusting for <span class="math inline">\(P\)</span>.</p>
+<p>It is important to clarify what this estimator is not: It is not the <em>effect</em> of drafting deck <span class="math inline">\(d_1\)</span>, it is not the effect of the player’s drafting choices, and it is not the effect of the deck conditional on the archetype. Rather, it isolates the causal contribution of the final realized deck composition itself <span class="math inline">\(D\)</span>, holding player skill fixed.</p>
 <hr>
 </section>
 </section>
@@ -285,7 +294,7 @@ p_i \sim \text{Beta}(\alpha,\beta).
 <h3 class="anchored" data-anchor-id="deck-bump">4.2 deck bump</h3>
 <p>the deck’s causal contribution is operationalized as:</p>
 <p><span class="math display">\[
-\text{deck\_bump} = f(D) - p_{\text{base}}.
+\text{deck_{bump}} = f(D) - p_{\text{base}}.
 \]</span></p>
 <p>this removes the direct effect of <span class="math inline">\(P \to W\)</span> and isolates the <span class="math inline">\(D \to W\)</span> path.<br>
 in quasi-random drafts, residual confounding is small.</p>
@@ -328,6 +337,7 @@ in quasi-random drafts, residual confounding is small.</p>
 </section>
 <section id="empirical-results-on-17lands-fin-format" class="level2">
 <h2 class="anchored" data-anchor-id="empirical-results-on-17lands-fin-format">6. empirical results on 17lands FIN format</h2>
+<p>Next I turn my attention to estimating the causal effect of deck composition on a player’s win rate. I keep the causal framework described in section 2.</p>
 <section id="data" class="level3">
 <h3 class="anchored" data-anchor-id="data">6.1 data</h3>
 <ul>
@@ -414,7 +424,32 @@ m_{c}(n) = f(D_{c}=n) - f(D_{c}=n-1),
 <li><span class="math inline">\(W\)</span> = drug response.</li>
 </ul>
 <p>the deck-bump estimator parallels expression-mediated effect isolation.</p>
+<section id="recovery-of-the-deck-effect-under-realistic-observation-noise" class="level3">
+<h3 class="anchored" data-anchor-id="recovery-of-the-deck-effect-under-realistic-observation-noise">Recovery of the Deck Effect under Realistic Observation Noise</h3>
+<p>Although the estimand defined in 2.3 is model agnostic, its recoverability in practice depends on the information constraints imposed by the Arena tournament structure. In particular, the latent per-game win probability <span class="math inline">\(p(D,P)\)</span> is never directly observed. Instead we observe only a stopped 7-3 fun outcome, which induces substantial variance and bias in any estimator derived from realized wins and losses. This censoring mechanism imposes a fundamental noise floor on inference that no modeling choice can eliminate.</p>
+<p>To assess the practical limitations of these constraints, I constructed a simulated environment consistent with the assumed DAG, in which the true deck effect and baseline player skill are known, but only noisy proxies which mirror the real Arena data, are observed. This allows us to separate limitations due to statistical identifiability from those imposed by the observation process itself.</p>
+</section>
+<section id="xgboost-as-a-function-approximator-for-the-g-formula" class="level3">
+<h3 class="anchored" data-anchor-id="xgboost-as-a-function-approximator-for-the-g-formula">XGBoost as a Function Approximator for the G-Formula</h3>
+<p>Within the simulated environment, I use XGBoost as a flexible function approximator to learn the mapping implied by the g-formula:</p>
+<p><span class="math inline">\((D,P) \rightarrow E[W | D,P]\)</span></p>
+<p>and, by extension, the skill-adjusted deck effect. XGBoost is not essential to the estimand itself; instead it serves as a practical stand-in for a broad class of nonlinear models capable of capturing interactions nd saturation effects in high-dimensional deck representations.</p>
+<p>The role of the model in this context is not to introduce causal structure, but to approximate a conditional expectation that s already causally identified by adjustment for player skill. Any sufficiently expressive learner with adequate regularization could, in principle, serve the same purpose.</p>
+</section>
+<section id="performance-relative-to-the-noise-ceiling" class="level3">
+<h3 class="anchored" data-anchor-id="performance-relative-to-the-noise-ceiling">Performance relative to the noise ceiling</h3>
+<p>A key result of the simulation is that XGBoost achieves predictive performance on the observed win-rate bump that approaches the theoretical ceiling implied by the 7-3 stopping rule. That is, accuracy is close to what would be attainable even if the true latent deck effect were known exactly and only the noisy outcome remained.</p>
+<p>This finding is important for interpretation. Remaining errors should not be attributed to model inadequacy, but rather to irreducible uncertainty introduced by tournament censoring and finite sample sizes. In this sense, the model’s performance provides an empirical upper bound on how well the deck estimand can be recovered from Arena style data.</p>
+</section>
+<section id="implications-for-real-world-arena-data" class="level3">
+<h3 class="anchored" data-anchor-id="implications-for-real-world-arena-data">Implications for Real World Arena Data</h3>
+<p>Because the true deck effect is unobservable in real data, simulation serves as the only setting in which recovery can be directly validated. The results suggest that under realistic conditions, a substantial fraction of the causal signal attributable to deck composition can be recovered. This has two implications. First, improvements in model architecture alone are unlikely to yield large gains beyond this point. Second, alternative data sources or experimental design would be required to meaningfully reduce uncertainty around deck effects.</p>
+</section>
+<section id="scope-and-intended-use-of-the-estimator" class="level3">
+<h3 class="anchored" data-anchor-id="scope-and-intended-use-of-the-estimator">Scope and Intended Use of the Estimator</h3>
+<p>Finally, it is important to emphasize the scope of the resulting estimator. The model targets the causal contribution of the <em>final realized deck composition</em>, holding player skill fixed. While this quantity can be used as a heuristic signal during a live draft, it is not optimized for decision-making under partial information. Live draft guidance is better framed as a sequential decision problem, where the relevant object is the expected downstream value of an action given the evolving draft state, rather than the value of the terminal deck alone.</p>
 <hr>
+</section>
 </section>
 <section id="limitations" class="level2">
 <h2 class="anchored" data-anchor-id="limitations">9. limitations</h2>
