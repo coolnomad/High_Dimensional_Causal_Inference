@@ -153,25 +153,23 @@ Each point represents a simulated deck with known true win-rate bump $\Delta p_{
 
 ## 6. empirical results on 17lands FIN format
 
-Next I turn my attention to estimating the causal effect of deck composition on a player's win rate. I keep the causal framework described in section 2.
+I now turn to estimating the causal effect of deck composition on player win rate using real Arena data. Throughout this section, I retain the causal framework and estimand defined in Section 2.
 
-### 6.1 data
+### 6.1 17lands Premier Draft Data
 
--   \~90,000 drafts\
--   \~400 card features\
--   complete event histories\
--   multiple replications per player
+I obtained Premier Draft records for the *Final Fantasy* set from 17Lands (<https://www.17lands.com/public_datasets>). The dataset contains 77,864 complete anonymized draft runs, final deck compositions over 363 unique cards, player win-rate buckets, and player game-count buckets. The median player win rate is 0.54, reflecting that the typical 17Lands user is an above-average Arena player.
 
 ### 6.2 calibration
 
-posterior predictions for $f(D)$ are nearly perfectly calibrated after beta-binomial smoothing. plotting $f(D)$ vs empirical win rate gives slope \~1.0 (vs \~1.3 naïve).
+Using the same analytic pipeline as in the simulation study, I evaluated the ability of deck composition to predict the observed deck-induced win-rate bump using five-fold cross-validation. The model was trained to predict the skill-adjusted outcome proxy defined in Section 2, and all reported diagnostics are based on out-of-fold predictions.
 
-::: cell
-```{r}
-# placeholder for calibration curve
-# ggplot(calib_df, aes(pred_bin, empirical_rate)) + ...
-```
+::: figure
+![](figs/bump_obs_vs_bump_hat_oof_simstyle.png){width="100%"} *Figure 3. Predicted deck bump vs observed deck bump effect using 5-fold cross-validation.*
+
+Each point corresponds to a realized deck, with the predicted deck effect $\Delta_{pred}$ plotted against the observed bump $\Delta p_{obs}$​, defined as the difference between the posterior mean win probability from the realized 7--3 tournament run and the player\'s baseline win rate. Points are sized by the number of games played in the run and colored by player win-rate decile. The solid line shows the best-fitting weighted linear regression, while the dashed line denotes the identity.
 :::
+
+The out-of-fold $R^2$ is approximately 0.06, indicating that deck composition explains a modest but non-negligible fraction of the variance in the skill-adjusted outcome proxy. Importantly, this magnitude closely approaches the empirical recoverability limit observed in the simulation study, where outcome censoring and binomial variance impose a hard ceiling on explainable variance. The agreement between simulated and real-data performance suggests that the model captures most of the deck-level signal that is practically identifiable under the Arena 7--3 tournament structure.
 
 ### 6.3 player-strength correction
 
@@ -210,22 +208,25 @@ together, these reveal:
 
 ------------------------------------------------------------------------
 
-## 8. discussion
+## 8. Discussion
 
-the broader contribution is methodological: deck construction is a reproducible sandbox for causal inference with:
+### Implications and use cases
 
--   high-dimensional treatments $D$,\
--   structured confounding via $P$,\
--   large sample sizes,\
--   quasi-random assignment noise from packs.
+The primary result of this study is that the causal contribution of deck composition to win rate can be isolated from player skill by conditioning on an approximate skill proxy. Despite heavy outcome censoring and substantial noise at the level of individual draft runs, deck composition explains a measurable and generalizable component of performance once player baseline win rate is accounted for. This demonstrates that "how strong a deck is" is a well-defined causal quantity, distinct from how well a player pilots it, and that it can be estimated from observational draft data.
 
-this same causal template appears in biological data:
+The estimated deck effect is not a measure of drafting ability or in-game decision making, but rather the expected change in win probability by using one deck composition instead of another for a player of a fixed skill.
 
--   $P$ = genomic background or copy number,\
--   $D$ = high-dimensional gene expression,\
--   $W$ = drug response.
+### Utility for players and analysts
 
-the deck-bump estimator parallels expression-mediated effect isolation.
+For players of card games, this framework is a principled way to quantify the contribution of specific cards or combinations of cards to deck strength, independent of player proficiency. While the model is trained on completed decks rather than live draft states, the resulting estimates can inform card evaluation, deck construction decisions, and post-draft analysis. Importantly, the modest variance explained by deck composition reflects the fundamental limits imposed by tournament structure and randomness, rather than a lack of signal in the cards themselves.
+
+### Methodological Contribution: Causal inference in High Dimensions
+
+More broadly, this work serves as an applied example of causal inference in a high-dimensional setting, where the treatment variable, deck composition, consists of hundreds of correlated components. By explicitly defining the estimand, leveraging a causal graph to justify adjustment, and validating recoverability through simulation, this approach illustrates how flexible machine-learning models can be used as estimators of causal quantities without conflating prediction with causation. The results highlight the importance of separating identifiability, estimation, and evaluation, particularly when outcomes are noisy and partially observed.
+
+### Implications for Game Design and Balance Analysis
+
+Finally, this framework may be useful for game designers and balance teams. By estimating the causal effect of deck composition independent of player skill, designers can identify cards or combinations that systematically over- or under-perform across the player base, rather than relying on raw win rates that are confounded by player selection effects. More generally, the approach provides a template for analyzing competitive systems in which player ability and strategic choices are tightly coupled, but where observational data are abundant.
 
 ### Recovery of the Deck Effect under Realistic Observation Noise
 

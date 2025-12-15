@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Demetrius DiMucci">
-<meta name="dcterms.date" content="2025-12-13">
+<meta name="dcterms.date" content="2025-12-15">
 
 <title>High-Dimensional Causal Inference in Draft Environments - Identifying Causal Deck-Construction Effects in High-Dimensional Draft Environments</title>
 <style>
@@ -21,40 +21,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -163,14 +129,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#empirical-results-on-17lands-fin-format" id="toc-empirical-results-on-17lands-fin-format" class="nav-link" data-scroll-target="#empirical-results-on-17lands-fin-format">6. empirical results on 17lands FIN format</a>
   <ul class="collapse">
-  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">6.1 data</a></li>
+  <li><a href="#lands-premier-draft-data" id="toc-lands-premier-draft-data" class="nav-link" data-scroll-target="#lands-premier-draft-data">6.1 17lands Premier Draft Data</a></li>
   <li><a href="#calibration" id="toc-calibration" class="nav-link" data-scroll-target="#calibration">6.2 calibration</a></li>
   <li><a href="#player-strength-correction" id="toc-player-strength-correction" class="nav-link" data-scroll-target="#player-strength-correction">6.3 player-strength correction</a></li>
   <li><a href="#per-card-marginal-curves" id="toc-per-card-marginal-curves" class="nav-link" data-scroll-target="#per-card-marginal-curves">6.4 per-card marginal curves</a></li>
   </ul></li>
   <li><a href="#interpretability" id="toc-interpretability" class="nav-link" data-scroll-target="#interpretability">7. interpretability</a></li>
-  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">8. discussion</a>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">8. Discussion</a>
   <ul class="collapse">
+  <li><a href="#implications-and-use-cases" id="toc-implications-and-use-cases" class="nav-link" data-scroll-target="#implications-and-use-cases">Implications and use cases</a></li>
+  <li><a href="#utility-for-players-and-analysts" id="toc-utility-for-players-and-analysts" class="nav-link" data-scroll-target="#utility-for-players-and-analysts">Utility for players and analysts</a></li>
+  <li><a href="#methodological-contribution-causal-inference-in-high-dimensions" id="toc-methodological-contribution-causal-inference-in-high-dimensions" class="nav-link" data-scroll-target="#methodological-contribution-causal-inference-in-high-dimensions">Methodological Contribution: Causal inference in High Dimensions</a></li>
+  <li><a href="#implications-for-game-design-and-balance-analysis" id="toc-implications-for-game-design-and-balance-analysis" class="nav-link" data-scroll-target="#implications-for-game-design-and-balance-analysis">Implications for Game Design and Balance Analysis</a></li>
   <li><a href="#recovery-of-the-deck-effect-under-realistic-observation-noise" id="toc-recovery-of-the-deck-effect-under-realistic-observation-noise" class="nav-link" data-scroll-target="#recovery-of-the-deck-effect-under-realistic-observation-noise">Recovery of the Deck Effect under Realistic Observation Noise</a></li>
   <li><a href="#xgboost-as-a-function-approximator-for-the-g-formula" id="toc-xgboost-as-a-function-approximator-for-the-g-formula" class="nav-link" data-scroll-target="#xgboost-as-a-function-approximator-for-the-g-formula">XGBoost as a Function Approximator for the G-Formula</a></li>
   <li><a href="#performance-relative-to-the-noise-ceiling" id="toc-performance-relative-to-the-noise-ceiling" class="nav-link" data-scroll-target="#performance-relative-to-the-noise-ceiling">Performance relative to the noise ceiling</a></li>
@@ -205,7 +175,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 13, 2025</p>
+      <p class="date">December 15, 2025</p>
     </div>
   </div>
   
@@ -337,31 +307,19 @@ in quasi-random drafts, residual confounding is small.</p>
 </section>
 <section id="empirical-results-on-17lands-fin-format" class="level2">
 <h2 class="anchored" data-anchor-id="empirical-results-on-17lands-fin-format">6. empirical results on 17lands FIN format</h2>
-<p>Next I turn my attention to estimating the causal effect of deck composition on a player’s win rate. I keep the causal framework described in section 2.</p>
-<section id="data" class="level3">
-<h3 class="anchored" data-anchor-id="data">6.1 data</h3>
-<ul>
-<li>~90,000 drafts<br>
-</li>
-<li>~400 card features<br>
-</li>
-<li>complete event histories<br>
-</li>
-<li>multiple replications per player</li>
-</ul>
+<p>I now turn to estimating the causal effect of deck composition on player win rate using real Arena data. Throughout this section, I retain the causal framework and estimand defined in Section 2.</p>
+<section id="lands-premier-draft-data" class="level3">
+<h3 class="anchored" data-anchor-id="lands-premier-draft-data">6.1 17lands Premier Draft Data</h3>
+<p>I obtained Premier Draft records for the <em>Final Fantasy</em> set from 17Lands (<a href="https://www.17lands.com/public_datasets" class="uri">https://www.17lands.com/public_datasets</a>). The dataset contains 77,864 complete anonymized draft runs, final deck compositions over 363 unique cards, player win-rate buckets, and player game-count buckets. The median player win rate is 0.54, reflecting that the typical 17Lands user is an above-average Arena player.</p>
 </section>
 <section id="calibration" class="level3">
 <h3 class="anchored" data-anchor-id="calibration">6.2 calibration</h3>
-<p>posterior predictions for <span class="math inline">\(f(D)\)</span> are nearly perfectly calibrated after beta-binomial smoothing. plotting <span class="math inline">\(f(D)\)</span> vs empirical win rate gives slope ~1.0 (vs ~1.3 naïve).</p>
-<div class="cell">
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># placeholder for calibration curve</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ggplot(calib_df, aes(pred_bin, empirical_rate)) + ...</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<p>Using the same analytic pipeline as in the simulation study, I evaluated the ability of deck composition to predict the observed deck-induced win-rate bump using five-fold cross-validation. The model was trained to predict the skill-adjusted outcome proxy defined in Section 2, and all reported diagnostics are based on out-of-fold predictions.</p>
+<div class="figure">
+<p><img src="figs/bump_obs_vs_bump_hat_oof_simstyle.png" class="img-fluid" style="width:100.0%"> <em>Figure 3. Predicted deck bump vs observed deck bump effect using 5-fold cross-validation.</em></p>
+<p>Each point corresponds to a realized deck, with the predicted deck effect <span class="math inline">\(\Delta_{pred}\)</span> plotted against the observed bump <span class="math inline">\(\Delta p_{obs}\)</span>​, defined as the difference between the posterior mean win probability from the realized 7–3 tournament run and the player's baseline win rate. Points are sized by the number of games played in the run and colored by player win-rate decile. The solid line shows the best-fitting weighted linear regression, while the dashed line denotes the identity.</p>
 </div>
-</div>
+<p>The out-of-fold <span class="math inline">\(R^2\)</span> is approximately 0.06, indicating that deck composition explains a modest but non-negligible fraction of the variance in the skill-adjusted outcome proxy. Importantly, this magnitude closely approaches the empirical recoverability limit observed in the simulation study, where outcome censoring and binomial variance impose a hard ceiling on explainable variance. The agreement between simulated and real-data performance suggests that the model captures most of the deck-level signal that is practically identifiable under the Arena 7–3 tournament structure.</p>
 </section>
 <section id="player-strength-correction" class="level3">
 <h3 class="anchored" data-anchor-id="player-strength-correction">6.3 player-strength correction</h3>
@@ -404,26 +362,24 @@ m_{c}(n) = f(D_{c}=n) - f(D_{c}=n-1),
 <hr>
 </section>
 <section id="discussion" class="level2">
-<h2 class="anchored" data-anchor-id="discussion">8. discussion</h2>
-<p>the broader contribution is methodological: deck construction is a reproducible sandbox for causal inference with:</p>
-<ul>
-<li>high-dimensional treatments <span class="math inline">\(D\)</span>,<br>
-</li>
-<li>structured confounding via <span class="math inline">\(P\)</span>,<br>
-</li>
-<li>large sample sizes,<br>
-</li>
-<li>quasi-random assignment noise from packs.</li>
-</ul>
-<p>this same causal template appears in biological data:</p>
-<ul>
-<li><span class="math inline">\(P\)</span> = genomic background or copy number,<br>
-</li>
-<li><span class="math inline">\(D\)</span> = high-dimensional gene expression,<br>
-</li>
-<li><span class="math inline">\(W\)</span> = drug response.</li>
-</ul>
-<p>the deck-bump estimator parallels expression-mediated effect isolation.</p>
+<h2 class="anchored" data-anchor-id="discussion">8. Discussion</h2>
+<section id="implications-and-use-cases" class="level3">
+<h3 class="anchored" data-anchor-id="implications-and-use-cases">Implications and use cases</h3>
+<p>The primary result of this study is that the causal contribution of deck composition to win rate can be isolated from player skill by conditioning on an approximate skill proxy. Despite heavy outcome censoring and substantial noise at the level of individual draft runs, deck composition explains a measurable and generalizable component of performance once player baseline win rate is accounted for. This demonstrates that “how strong a deck is” is a well-defined causal quantity, distinct from how well a player pilots it, and that it can be estimated from observational draft data.</p>
+<p>The estimated deck effect is not a measure of drafting ability or in-game decision making, but rather the expected change in win probability by using one deck composition instead of another for a player of a fixed skill.</p>
+</section>
+<section id="utility-for-players-and-analysts" class="level3">
+<h3 class="anchored" data-anchor-id="utility-for-players-and-analysts">Utility for players and analysts</h3>
+<p>For players of card games, this framework is a principled way to quantify the contribution of specific cards or combinations of cards to deck strength, independent of player proficiency. While the model is trained on completed decks rather than live draft states, the resulting estimates can inform card evaluation, deck construction decisions, and post-draft analysis. Importantly, the modest variance explained by deck composition reflects the fundamental limits imposed by tournament structure and randomness, rather than a lack of signal in the cards themselves.</p>
+</section>
+<section id="methodological-contribution-causal-inference-in-high-dimensions" class="level3">
+<h3 class="anchored" data-anchor-id="methodological-contribution-causal-inference-in-high-dimensions">Methodological Contribution: Causal inference in High Dimensions</h3>
+<p>More broadly, this work serves as an applied example of causal inference in a high-dimensional setting, where the treatment variable, deck composition, consists of hundreds of correlated components. By explicitly defining the estimand, leveraging a causal graph to justify adjustment, and validating recoverability through simulation, this approach illustrates how flexible machine-learning models can be used as estimators of causal quantities without conflating prediction with causation. The results highlight the importance of separating identifiability, estimation, and evaluation, particularly when outcomes are noisy and partially observed.</p>
+</section>
+<section id="implications-for-game-design-and-balance-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="implications-for-game-design-and-balance-analysis">Implications for Game Design and Balance Analysis</h3>
+<p>Finally, this framework may be useful for game designers and balance teams. By estimating the causal effect of deck composition independent of player skill, designers can identify cards or combinations that systematically over- or under-perform across the player base, rather than relying on raw win rates that are confounded by player selection effects. More generally, the approach provides a template for analyzing competitive systems in which player ability and strategic choices are tightly coupled, but where observational data are abundant.</p>
+</section>
 <section id="recovery-of-the-deck-effect-under-realistic-observation-noise" class="level3">
 <h3 class="anchored" data-anchor-id="recovery-of-the-deck-effect-under-realistic-observation-noise">Recovery of the Deck Effect under Realistic Observation Noise</h3>
 <p>Although the estimand defined in 2.3 is model agnostic, its recoverability in practice depends on the information constraints imposed by the Arena tournament structure. In particular, the latent per-game win probability <span class="math inline">\(p(D,P)\)</span> is never directly observed. Instead we observe only a stopped 7-3 fun outcome, which induces substantial variance and bias in any estimator derived from realized wins and losses. This censoring mechanism imposes a fundamental noise floor on inference that no modeling choice can eliminate.</p>
